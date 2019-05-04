@@ -3,7 +3,6 @@ from flask import Flask
 from flask import request
 from flask import jsonify
 import json
-# from telegram.ext import *
 
 token = "819066941:AAHhUC2DlErMP_NLErJ5mfJTWNFgDiy97Sc"
 
@@ -49,7 +48,6 @@ def get_ngrok_url():
 
 
 def set_webhook_info(String):
-    answer = {'url': String}
     r = requests.post(URL + "setWebhook?url=" + String + "/bot")
     return r.json()
 
@@ -65,8 +63,6 @@ def delete_old_webhook():
 if __name__ == '__main__':
     # app.run(host='0.0.0.0')
     delete_old_webhook()
-    # import os
-    # os.spawnl(os.P_DETACH, "ngrok.exe", ["http", "5000"])
 
     import subprocess
 

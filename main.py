@@ -1,8 +1,7 @@
+from flask import Flask, request, jsonify
 import requests
-from flask import Flask
-from flask import request
-from flask import jsonify
 import json
+
 
 token = "819066941:AAHhUC2DlErMP_NLErJ5mfJTWNFgDiy97Sc"
 
@@ -11,9 +10,9 @@ URL = 'https://api.telegram.org/bot819066941:AAHhUC2DlErMP_NLErJ5mfJTWNFgDiy97Sc
 app = Flask(__name__)
 
 
-def send_echo_msg(chatID, text):
+def send_msg(chat_id, text):
     url = URL + "sendMessage"
-    answer = {'chat_id': chatID, 'text': text}
+    answer = {'chat_id': chat_id, 'text': text}
     r = requests.post(url, json=answer)
     return r.json()
 
@@ -24,6 +23,20 @@ def get_updates():
     return r.json()
 
 
+def send_menu(chat_id):
+    url = URL + "sendMessage"
+    buttons = {'inline_keyboard': [
+        # row 1
+        [{'text': 'Button 1 🥳', 'url': 'https://google.com/'}, {'text': 'Button 2 👽', 'url': 'https://youtube.com/'}],
+        # row 2
+        [{'text': 'Button 3 👾', 'url': 'https://gmail.com/'}]
+    ]
+    }
+    answer = {'chat_id': chat_id, 'text': "Ось ваше меню:", 'reply_markup': buttons}
+    r = requests.post(url, json=answer)
+    return r.json()
+
+
 @app.route('/bot', methods=['POST', 'GET'])
 def echo():
     if request.method == 'POST':
@@ -31,24 +44,29 @@ def echo():
         print(r)
         chat_id = r['message']['chat']['id']
         try:
-            message = "Ви написали: '"+r['message']['text']+"'"
+            msg_text = r['message']['text']
+            if "/menu" in msg_text:
+                send_menu(chat_id)
+            else:
+                message = "Ви написали: '"+r['message']['text']+"'"
+                send_msg(chat_id, message)
         except:
             message = "Помилка, не введено символів"
-        send_echo_msg(chat_id, message)
+            send_msg(chat_id, message)
         return jsonify(r)
     return 'Bot welcomes you !'
 
 
 def get_ngrok_url():
     import time
-    time.sleep(5)
+    time.sleep(10)
     r = requests.get("http://localhost:4040/api/tunnels")
     ngr = r.json()['tunnels'][0]['public_url']
     return ngr
 
 
-def set_webhook_info(String):
-    r = requests.post(URL + "setWebhook?url=" + String + "/bot")
+def set_webhook_info(ngr_url):
+    r = requests.post(URL + "setWebhook?url=" + ngr_url + "/bot")
     return r.json()
 
 

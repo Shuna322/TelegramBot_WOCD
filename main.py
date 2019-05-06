@@ -15,7 +15,10 @@ def send_msg(chat_id, text, button_markup = None):
     answer = {'chat_id': chat_id, 'text': text}
     if button_markup is not None:
         import base64
-        answer['reply_markup'] = eval(base64.b64decode(button_markup))
+        try:
+            answer['reply_markup'] = eval(base64.b64decode(button_markup))
+        except:
+            print("parse error")
     r = requests.post(url, json=answer)
     print(r.json())
     return r.json()

@@ -7,6 +7,8 @@ token = "819066941:AAHhUC2DlErMP_NLErJ5mfJTWNFgDiy97Sc"
 
 URL = 'https://api.telegram.org/bot819066941:AAHhUC2DlErMP_NLErJ5mfJTWNFgDiy97Sc/'
 
+ngrok_token = "2YKzZQs5HbksqP1AkRZaN_3TwdEn6CwZLzED16HeqMs"
+
 app = Flask(__name__)
 
 
@@ -120,10 +122,16 @@ def delete_old_webhook():
 if __name__ == '__main__':
     # app.run(host='0.0.0.0')
     delete_old_webhook()
+    import os, subprocess
+    if os.name == "nt":
+        from pathlib import Path
+        home = str(Path.home())
+        filepath = home + "\\.ngrok2\\ngrok.yml"
+        if not os.path.exists(filepath):
+            subprocess.Popen(["ngrok.exe", "authtoken", ngrok_token])
+        ##############################
 
-    import subprocess
-
-    subprocess.Popen(["ngrok.exe", "http", "5000"])
+        subprocess.Popen(["ngrok.exe", "http", "5000"])
 
     set_webhook_info(get_ngrok_url())
 

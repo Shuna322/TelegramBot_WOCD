@@ -64,24 +64,46 @@ def msg_handler():
 
         try:
             msg_text = r['message']['text']
+
+            # NEW ##### #######################
             try:
                 with conn.cursor() as cursor:
                     # Read a single record
-                    sql = "SELECT * FROM `commands_list`"
+                    sql = "SELECT * FROM `users_status` WHERE `user_name` = '" + r['message']['chat']['username'] + "';"
                     cursor.execute(sql)
                     result = cursor.fetchall()
-                    for row in result:
-                        if row['command'] in msg_text:
-                            send_msg(chat_id, row['respond_text'], row['respond_button_markup'])
-                            command_found = True
-                            break
-                    if not command_found:
-                        message = "Ви написали: '" + r['message']['text'] + "'"
-                        send_msg(chat_id, message)
+                    if len(result) > 0:
+                        for row in result:
+                            if row['state'] == 1:
+                                sql = "DELETE FROM `users_status` WHERE `users_status`.`user_name` = '" + r['message']['chat']['username'] + "';"
+                                cursor.execute(sql)
+                                conn.commit()
+                                message = "Ви ввели `" + r['message']['text'] + "` і завершили реєстрацію"
+                                send_msg(chat_id, message)
+                    else:
+                        if msg_text == "/register":
+                            sql = "INSERT INTO `users_status` (`id`, `user_name`, `state`) VALUES (NULL, '" + r['message']['chat']['username'] + "', '1');"
+                            cursor.execute(sql)
+                            conn.commit()
+                            message = "Розпочато реєстрацю, введіть Прізвище та ініціали"
+                            send_msg(chat_id, message)
+                        else:
+                            sql = "SELECT * FROM `commands_list`"
+                            cursor.execute(sql)
+                            result = cursor.fetchall()
+                            for row in result:
+                                if row['command'] in msg_text:
+                                    send_msg(chat_id, row['respond_text'], row['respond_button_markup'])
+                                    command_found = True
+                                    break
+                            if not command_found:
+                                message = "Ви написали: '" + r['message']['text'] + "'"
+                                send_msg(chat_id, message)
             except Exception as e:
                 print("Got DB ex: " + e)
             finally:
                 conn.close()
+
 
             # msg_text = r['message']['text']
             # if "/menu" in msg_text:
@@ -107,7 +129,13 @@ def get_ngrok_url():
 
 
 def set_webhook_info(ngr_url):
-    r = requests.post(URL + "setWebhook?url=" + ngr_url + "/bot")
+    while True:
+        r = requests.post(URL + "setWebhook?url=" + ngr_url + "/bot")
+        if r.json()['description'] == "Webhook was set":
+            break
+        else:
+            import time
+            time.sleep(2)
     return r.json()
 
 
@@ -130,7 +158,7 @@ if __name__ == '__main__':
         if not os.path.exists(filepath):
             subprocess.Popen(["ngrok.exe", "authtoken", ngrok_token])
         ##############################
-
+        os.system("taskkill /f /im ngrok.exe")
         subprocess.Popen(["ngrok.exe", "http", "5000"])
 
     set_webhook_info(get_ngrok_url())

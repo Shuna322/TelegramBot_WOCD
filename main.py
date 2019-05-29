@@ -3,17 +3,13 @@ import requests
 import json
 import pymysql.cursors
 
-token = "819066941:AAHhUC2DlErMP_NLErJ5mfJTWNFgDiy97Sc"
-
-URL = 'https://api.telegram.org/bot819066941:AAHhUC2DlErMP_NLErJ5mfJTWNFgDiy97Sc/'
-
-ngrok_token = "2YKzZQs5HbksqP1AkRZaN_3TwdEn6CwZLzED16HeqMs"
+import settings
+import utils
 
 app = Flask(__name__)
 
-
 def send_msg(chat_id, text, button_markup = None):
-    url = URL + "sendMessage"
+    url = settings.URL + "sendMessage"
     answer = {'chat_id': chat_id, 'text': text}
     if button_markup is not None:
         import base64
@@ -21,27 +17,6 @@ def send_msg(chat_id, text, button_markup = None):
             answer['reply_markup'] = eval(base64.b64decode(button_markup))
         except:
             print("parse error")
-    r = requests.post(url, json=answer)
-    print(r.json())
-    return r.json()
-
-
-def get_updates():
-    url = URL + "getUpdates"
-    r = requests.post(url)
-    return r.json()
-
-
-def send_menu(chat_id):
-    url = URL + "sendMessage"
-    buttons = {'inline_keyboard': [
-        # row 1
-        [{'text': 'Button 1 🥳', 'url': 'https://google.com/'}, {'text': 'Button 2 👽', 'url': 'https://youtube.com/'}],
-        # row 2
-        [{'text': 'Button 3 👾', 'url': 'https://gmail.com/'}]
-    ]
-    }
-    answer = {'chat_id': chat_id, 'text': "Ось ваше меню:", 'reply_markup': buttons}
     r = requests.post(url, json=answer)
     print(r.json())
     return r.json()
@@ -119,49 +94,25 @@ def msg_handler():
     else:
         return 'Bot welcomes you !'
 
-
-def get_ngrok_url():
-    import time
-    time.sleep(10)
-    r = requests.get("http://localhost:4040/api/tunnels")
-    ngr = r.json()['tunnels'][0]['public_url']
-    return ngr
-
-
-def set_webhook_info(ngr_url):
-    while True:
-        r = requests.post(URL + "setWebhook?url=" + ngr_url + "/bot")
-        if r.json()['description'] == "Webhook was set":
-            break
-        else:
-            import time
-            time.sleep(2)
-    return r.json()
-
-
-def delete_old_webhook():
-    r = requests.post(URL + "deleteWebhook")
-    return r.json()
-
 # https://api.telegram.org/bot819066941:AAHhUC2DlErMP_NLErJ5mfJTWNFgDiy97Sc/setWebhook?url=https://c0eda49f.ngrok.io/bot
 # https://c0eda49f.ngrok.io/bot
 
 
 if __name__ == '__main__':
     # app.run(host='0.0.0.0')
-    delete_old_webhook()
+    utils.delete_old_webhook()
     import os, subprocess
     if os.name == "nt":
         from pathlib import Path
         home = str(Path.home())
         filepath = home + "\\.ngrok2\\ngrok.yml"
         if not os.path.exists(filepath):
-            subprocess.Popen(["ngrok.exe", "authtoken", ngrok_token])
+            subprocess.Popen(["ngrok.exe", "authtoken", settings.ngrok_token])
         ##############################
         os.system("taskkill /f /im ngrok.exe")
         subprocess.Popen(["ngrok.exe", "http", "5000"])
 
-    set_webhook_info(get_ngrok_url())
+    utils.set_webhook_info(utils.get_ngrok_url())
 
     app.run()
 

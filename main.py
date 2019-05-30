@@ -8,7 +8,8 @@ import utils
 
 app = Flask(__name__)
 
-def send_msg(chat_id, text, button_markup = None):
+
+def send_msg(chat_id, text, button_markup=None):
     url = settings.URL + "sendMessage"
     answer = {'chat_id': chat_id, 'text': text}
     if button_markup is not None:
@@ -30,10 +31,10 @@ def msg_handler():
         chat_id = r['message']['chat']['id']
         command_found = False
 
-        conn = pymysql.connect(host='51.254.175.184',
-                               user='wocd_dev_user',
-                               password='2E3i9T5i',
-                               db='wocd_dev_db',
+        conn = pymysql.connect(host=settings.database_host,
+                               user=settings.database_user,
+                               password=settings.database_user_pass,
+                               db=settings.database_DB,
                                charset='utf8mb4',
                                cursorclass=pymysql.cursors.DictCursor)
 
@@ -50,14 +51,16 @@ def msg_handler():
                     if len(result) > 0:
                         for row in result:
                             if row['state'] == 1:
-                                sql = "DELETE FROM `users_status` WHERE `users_status`.`user_name` = '" + r['message']['chat']['username'] + "';"
+                                sql = "DELETE FROM `users_status` WHERE `users_status`.`user_name` = '" \
+                                      + r['message']['chat']['username'] + "';"
                                 cursor.execute(sql)
                                 conn.commit()
                                 message = "Ви ввели `" + r['message']['text'] + "` і завершили реєстрацію"
                                 send_msg(chat_id, message)
                     else:
                         if msg_text == "/register":
-                            sql = "INSERT INTO `users_status` (`id`, `user_name`, `state`) VALUES (NULL, '" + r['message']['chat']['username'] + "', '1');"
+                            sql = "INSERT INTO `users_status` (`id`, `user_name`, `state`) VALUES (NULL, '" \
+                                  + r['message']['chat']['username'] + "', '1');"
                             cursor.execute(sql)
                             conn.commit()
                             message = "Розпочато реєстрацю, введіть Прізвище та ініціали"
@@ -80,13 +83,6 @@ def msg_handler():
                 conn.close()
 
 
-            # msg_text = r['message']['text']
-            # if "/menu" in msg_text:
-            #     send_menu(chat_id)
-            # else:
-            #     message = "Ви написали: '"+r['message']['text']+"'"
-            #     send_msg(chat_id, message)
-
         except Exception as e:
             message = "Помилка, не введено символів"
             send_msg(chat_id, message)
@@ -101,16 +97,10 @@ def msg_handler():
 if __name__ == '__main__':
     # app.run(host='0.0.0.0')
     utils.delete_old_webhook()
-    import os, subprocess
-    if os.name == "nt":
-        from pathlib import Path
-        home = str(Path.home())
-        filepath = home + "\\.ngrok2\\ngrok.yml"
-        if not os.path.exists(filepath):
-            subprocess.Popen(["ngrok.exe", "authtoken", settings.ngrok_token])
-        ##############################
-        os.system("taskkill /f /im ngrok.exe")
-        subprocess.Popen(["ngrok.exe", "http", "5000"])
+
+    from threading import Thread
+    run_ngrook = Thread(utils.setup_and_run_ngrook())
+    run_ngrook.start()
 
     utils.set_webhook_info(utils.get_ngrok_url())
 

@@ -1,6 +1,7 @@
 import requests
 import settings
-import  status
+import status
+
 
 def send_msg(chat_id, text, button_markup=None):
     url = settings.URL + "sendMessage"
@@ -69,8 +70,62 @@ def delete_old_webhook():
 
 ################# Registration #################
 
+
 def registration_start():
     return 0
+
+
+def registration_cancel(username, chat_id):
+    import pymysql.cursors
+    conn = pymysql.connect(host=settings.database_host,
+                           user=settings.database_user,
+                           password=settings.database_user_pass,
+                           db=settings.database_DB,
+                           charset='utf8mb4',
+                           cursorclass=pymysql.cursors.DictCursor)
+    try:
+        with conn.cursor() as cursor:
+            sql = "SELECT * FROM `users_status` WHERE `user_name` = %s"
+            cursor.execute(sql, username)
+            result = cursor.fetchone()
+            if result is not None:
+                user_status_id = result['id']
+                user_status_teamid = result['team_id']
+
+                sql = "SELECT * FROM `team_list` WHERE `class_id` = %s"
+                cursor.execute(sql, user_status_teamid)
+                result2 = cursor.fetchone()
+                team_list_id = result2['id']
+                team_list_id_captain_id = result2['captain_id']
+                if result2['members_id'] is not None:
+                    team_list_members_id = str.split(result2['members_id'], ",")
+                    for member_id in team_list_members_id:
+                        sql = "DELETE FROM `members` WHERE `id` = %s"
+                        cursor.execute(sql, member_id)
+                        conn.commit()
+                sql = "DELETE FROM `members` WHERE `id` = %s"
+                cursor.execute(sql, team_list_id_captain_id)
+                conn.commit()
+
+                sql = "DELETE FROM `team_list` WHERE `id` = %s"
+                cursor.execute(sql, team_list_id)
+                conn.commit()
+
+                sql = "DELETE FROM `users_status` WHERE `id` = %s"
+                cursor.execute(sql, user_status_id)
+                conn.commit()
+
+                message = "Операцію відмінео !"
+                send_msg(chat_id=chat_id, text=message)
+            else:
+                message = "Немає чого відміняти"
+                send_msg(chat_id=chat_id, text=message)
+
+    except Exception as e:
+        print("Got database error at registration_cancel function\nException: " + e.__doc__)
+
+    finally:
+        conn.close()
 
 
 def registration_enterKey(key, username, chat_id):
@@ -86,11 +141,26 @@ def registration_enterKey(key, username, chat_id):
             sql = "SELECT * FROM `classes` WHERE `reg_key`= %s"
             cursor.execute(sql, key)
             result = cursor.fetchone()
+            classid = result["id"]
             if result is not None:
                 message = "Введено правильний ключ, обрано групу: '" + result["class"] + "'."
                 sql = "UPDATE `users_status` SET `status` = %s, `team_id` = '%s' WHERE `users_status`.`user_name` = %s;"
                 cursor.execute(sql, (status.Status.commandName.value, result['id'], username))
                 conn.commit()
+
+                sql = "INSERT INTO `members` VALUES (NULL, NULL, '1', %s, NULL);"
+                cursor.execute(sql, username)
+                conn.commit()
+
+                sql = "SELECT * FROM `members` WHERE `telegram_username`= %s"
+                cursor.execute(sql, username)
+                result = cursor.fetchone()
+                capitanid = result['id']
+
+                sql = "INSERT INTO `team_list` VALUES (NULL, NULL, %s, %s, NULL);"
+                cursor.execute(sql, (classid, capitanid))
+                conn.commit()
+
                 send_msg(chat_id=chat_id, text=message)
 
                 message = "Введіть назву команди:"
@@ -105,34 +175,34 @@ def registration_enterKey(key, username, chat_id):
     finally:
         conn.close()
 
-def registration_commandName(name, username, chat_id):
-    import pymysql.cursors
-    conn = pymysql.connect(host=settings.database_host,
-                           user=settings.database_user,
-                           password=settings.database_user_pass,
-                           db=settings.database_DB,
-                           charset='utf8mb4',
-                           cursorclass=pymysql.cursors.DictCursor)
-    try:
-        with conn.cursor() as cursor:
-            sql = "SELECT * FROM `team_keys` WHERE `reg_key`= %s"
-            cursor.execute(sql, key)
-            result = cursor.fetchone()
-            if result is not None:
-                message = "Введено правильний ключ, обрано групу: '" + result["class"] + "'."
-                sql = "UPDATE `users_status` SET `status` = %s, `team_id` = '%s' WHERE `users_status`.`user_name` = %s;"
-                cursor.execute(sql, (status.Status.commandName.value, result['id'], username))
-                conn.commit()
-                send_msg(chat_id=chat_id, text=message)
-
-                message = "Введіть назву команди:"
-                send_msg(chat_id=chat_id, text=message)
-            else:
-                message = "Не знайдено команду з даним ключем, спробуйте ще раз."
-                send_msg(chat_id=chat_id, text=message)
-
-    except Exception as e:
-        print("Got database error at registration_enterKey function\nException: " + e.__doc__)
-
-    finally:
-        conn.close()
+# def registration_commandName(name, username, chat_id):
+#     import pymysql.cursors
+#     conn = pymysql.connect(host=settings.database_host,
+#                            user=settings.database_user,
+#                            password=settings.database_user_pass,
+#                            db=settings.database_DB,
+#                            charset='utf8mb4',
+#                            cursorclass=pymysql.cursors.DictCursor)
+#     try:
+#         with conn.cursor() as cursor:
+#             sql = "SELECT * FROM `team_keys` WHERE `reg_key`= %s"
+#             cursor.execute(sql, key)
+#             result = cursor.fetchone()
+#             if result is not None:
+#                 message = "Введено правильний ключ, обрано групу: '" + result["class"] + "'."
+#                 sql = "UPDATE `users_status` SET `status` = %s, `team_id` = '%s' WHERE `users_status`.`user_name` = %s;"
+#                 cursor.execute(sql, (status.Status.commandName.value, result['id'], username))
+#                 conn.commit()
+#                 send_msg(chat_id=chat_id, text=message)
+#
+#                 message = "Введіть назву команди:"
+#                 send_msg(chat_id=chat_id, text=message)
+#             else:
+#                 message = "Не знайдено команду з даним ключем, спробуйте ще раз."
+#                 send_msg(chat_id=chat_id, text=message)
+#
+#     except Exception as e:
+#         print("Got database error at registration_enterKey function\nException: " + e.__doc__)
+#
+#     finally:
+#         conn.close()

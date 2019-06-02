@@ -19,7 +19,7 @@ def msg_handler():
 
         chat_id = r['message']['chat']['id']
         username = r['message']['chat']['username']
-        msg_text = ""
+        msg_text = None
 
         result = None
 
@@ -32,31 +32,26 @@ def msg_handler():
                                charset='utf8mb4',
                                cursorclass=pymysql.cursors.DictCursor)
         try:
-            with conn.cursor() as cursor:
-                # Read a single record
-                sql = "SELECT * FROM `users_status` WHERE `user_name` = %s;"
-                cursor.execute(sql, (username,))
-                result = cursor.fetchall()
+            msg_text = r['message']['text']
         except Exception as e:
-            print("Got DB ex: " + e.__doc__)
-        finally:
-            conn.close()
+            print("Couldn't find text in msg, probably msg without text was send \nException: " + e.__doc__)
+        if msg_text == "/cancel":
+            utils.registration_cancel(username=username, chat_id=chat_id)
+        else:
+            try:
+                with conn.cursor() as cursor:
+                    # Read a single record
+                    sql = "SELECT * FROM `users_status` WHERE `user_name` = %s;"
+                    cursor.execute(sql, (username,))
+                    result = cursor.fetchall()
+            except Exception as e:
+                print("Got DB ex: " + e.__doc__)
+            finally:
+                conn.close()
 
-        if len(result) > 0:
-            for row in result:
-                if row['status'] == status.Status.keyEnter.value:
-
-                    ############# TO-DO #############
-                    # Probably better to do universal parser for every status
-                    try:
-                        msg_text = r['message']['text']
-                        utils.registration_enterKey(key=msg_text, username=username, chat_id=chat_id)
-                    except Exception as e:
-                        print("Couldn't find msg text, suggesting verify input \nException: " + e.__doc__)
-                        message = status.statusErrorMsg[status.Status.keyEnter]
-                        utils.send_msg(chat_id, message)
-                    ############# ^TO-DO^ #############
-                    if row['status'] == status.Status.commandName.value:
+            if len(result) > 0:
+                for row in result:
+                    if row['status'] == status.Status.keyEnter.value:
 
                         ############# TO-DO #############
                         # Probably better to do universal parser for every status
@@ -65,63 +60,74 @@ def msg_handler():
                             utils.registration_enterKey(key=msg_text, username=username, chat_id=chat_id)
                         except Exception as e:
                             print("Couldn't find msg text, suggesting verify input \nException: " + e.__doc__)
-                            message = status.statusErrorMsg[status.Status.keyEnter]
+                            message = status.statusErrorMsg[status.Status.keyEnter.value]
                             utils.send_msg(chat_id, message)
                         ############# ^TO-DO^ #############
-        else:
-            try:
-                msg_text = r['message']['text']
-            except Exception as e:
-                print("Couldn't find text in msg, probably msg without text was send \nException: " + e.__doc__)
-                message = "Ви прислали повідомлення без тексту.\n" + \
-                          "Скористайтеся командою /menu для отримння меню з доступними функціями."
-                utils.send_msg(chat_id, message)
-            if msg_text == "/register":
-                conn = pymysql.connect(host=settings.database_host,
-                                       user=settings.database_user,
-                                       password=settings.database_user_pass,
-                                       db=settings.database_DB,
-                                       charset='utf8mb4',
-                                       cursorclass=pymysql.cursors.DictCursor)
-                try:
-                    with conn.cursor() as cursor:
-                        sql = "INSERT INTO `users_status` (`id`, `user_name`, `status`, `team_id`) VALUES (NULL, %s, %s, NULL);"
-                        cursor.execute(sql, (username, status.Status.keyEnter.value))
-                        conn.commit()
-                        message = "Розпочато реєстрацю, введіть персональний ключ"
-                        utils.send_msg(chat_id, message)
-                except Exception as e:
-                    print("Got DB ex: " + e.__doc__)
-                    message = "Сталася помилка при роботі з базою данних"
-                    utils.send_msg(chat_id, message)
-                finally:
-                    conn.close()
+                    if row['status'] == status.Status.commandName.value:
 
+                        ############# TO-DO #############
+                        # Probably better to do universal parser for every status
+                        try:
+                            msg_text = r['message']['text']
+                            utils.registration_commandName(name=msg_text, username=username, chat_id=chat_id)
+                        except Exception as e:
+                            print("Couldn't find msg text, suggesting verify input \nException: " + e.__doc__)
+                            message = status.statusErrorMsg[status.Status.commandName.value]
+                            utils.send_msg(chat_id, message)
+                        ############# ^TO-DO^ #############
             else:
-                conn = pymysql.connect(host=settings.database_host,
-                                       user=settings.database_user,
-                                       password=settings.database_user_pass,
-                                       db=settings.database_DB,
-                                       charset='utf8mb4',
-                                       cursorclass=pymysql.cursors.DictCursor)
                 try:
-                    with conn.cursor() as cursor:
-                        sql = "SELECT * FROM `commands_list`"
-                        cursor.execute(sql)
-                        result = cursor.fetchall()
+                    msg_text = r['message']['text']
                 except Exception as e:
-                    print("Got DB ex: " + e.__doc__)
-                finally:
-                    conn.close()
-
-                for row in result:
-                    if row['command'] in msg_text:
-                        utils.send_msg(chat_id, row['respond_text'], row['respond_button_markup'])
-                        command_found = True
-                        break
-                if not command_found and msg_text != "":
-                    message = "Ви написали: '" + msg_text + "'"
+                    print("Couldn't find text in msg, probably msg without text was send \nException: " + e.__doc__)
+                    message = "Ви прислали повідомлення без тексту.\n" + \
+                              "Скористайтеся командою /menu для отримння меню з доступними функціями."
                     utils.send_msg(chat_id, message)
+                if msg_text == "/register":
+                    conn = pymysql.connect(host=settings.database_host,
+                                           user=settings.database_user,
+                                           password=settings.database_user_pass,
+                                           db=settings.database_DB,
+                                           charset='utf8mb4',
+                                           cursorclass=pymysql.cursors.DictCursor)
+                    try:
+                        with conn.cursor() as cursor:
+                            sql = "INSERT INTO `users_status` (`id`, `user_name`, `status`, `team_id`) VALUES (NULL, %s, %s, NULL);"
+                            cursor.execute(sql, (username, status.Status.keyEnter.value))
+                            conn.commit()
+                            message = "Розпочато реєстрацю, введіть персональний ключ"
+                            utils.send_msg(chat_id, message)
+                    except Exception as e:
+                        print("Got DB ex: " + e.__doc__)
+                        message = "Сталася помилка при роботі з базою данних"
+                        utils.send_msg(chat_id, message)
+                    finally:
+                        conn.close()
+                else:
+                    conn = pymysql.connect(host=settings.database_host,
+                                           user=settings.database_user,
+                                           password=settings.database_user_pass,
+                                           db=settings.database_DB,
+                                           charset='utf8mb4',
+                                           cursorclass=pymysql.cursors.DictCursor)
+                    try:
+                        with conn.cursor() as cursor:
+                            sql = "SELECT * FROM `commands_list`"
+                            cursor.execute(sql)
+                            result = cursor.fetchall()
+                    except Exception as e:
+                        print("Got DB ex: " + e.__doc__)
+                    finally:
+                        conn.close()
+
+                    for row in result:
+                        if row['command'] in msg_text:
+                            utils.send_msg(chat_id, row['respond_text'], row['respond_button_markup'])
+                            command_found = True
+                            break
+                    if not command_found and msg_text != "":
+                        message = "Ви написали: '" + msg_text + "'"
+                        utils.send_msg(chat_id, message)
 
         return jsonify(r)
     else:

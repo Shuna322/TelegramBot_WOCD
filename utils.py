@@ -144,6 +144,8 @@ def registration_enterKey(r):
         print("Couldn't find msg text, suggesting verify input \nException: " + e.__doc__)
         message = status.statusErrorMsg[status.Status.keyEnter.value]
         send_msg(chat_id, message)
+        conn.close()
+        return
 
     try:
         with conn.cursor() as cursor:
@@ -193,34 +195,44 @@ def registration_enterKey(r):
     finally:
         conn.close()
 
-# def registration_commandName(name, username, chat_id):
-#     import pymysql.cursors
-#     conn = pymysql.connect(host=settings.database_host,
-#                            user=settings.database_user,
-#                            password=settings.database_user_pass,
-#                            db=settings.database_DB,
-#                            charset='utf8mb4',
-#                            cursorclass=pymysql.cursors.DictCursor)
-#     try:
-#         with conn.cursor() as cursor:
-#             sql = "SELECT * FROM `team_keys` WHERE `reg_key`= %s"
-#             cursor.execute(sql, key)
-#             result = cursor.fetchone()
-#             if result is not None:
-#                 message = "Введено правильний ключ, обрано групу: '" + result["class"] + "'."
-#                 sql = "UPDATE `users_status` SET `status` = %s, `team_id` = '%s' WHERE `users_status`.`user_name` = %s;"
-#                 cursor.execute(sql, (status.Status.commandName.value, result['id'], username))
-#                 conn.commit()
-#                 send_msg(chat_id=chat_id, text=message)
-#
-#                 message = "Введіть назву команди:"
-#                 send_msg(chat_id=chat_id, text=message)
-#             else:
-#                 message = "Не знайдено команду з даним ключем, спробуйте ще раз."
-#                 send_msg(chat_id=chat_id, text=message)
-#
-#     except Exception as e:
-#         print("Got database error at registration_enterKey function\nException: " + e.__doc__)
-#
-#     finally:
-#         conn.close()
+def registration_commandName(r):
+    import pymysql.cursors
+    conn = pymysql.connect(host=settings.database_host,
+                           user=settings.database_user,
+                           password=settings.database_user_pass,
+                           db=settings.database_DB,
+                           charset='utf8mb4',
+                           cursorclass=pymysql.cursors.DictCursor)
+
+    import status
+    chat_id = r['message']['chat']['id']
+    try:
+        name = r['message']['text']
+    except Exception as e:
+        print("Couldn't find msg text, suggesting verify input \nException: " + e.__doc__)
+        message = status.statusErrorMsg[status.Status.keyEnter.value]
+        send_msg(chat_id, message)
+        conn.close()
+        return
+
+    try:
+        with conn.cursor() as cursor:
+            sql = "SELECT * FROM `members` WHERE `chat_id`= %s"
+            cursor.execute(sql, chat_id)
+            result = cursor.fetchone()
+            if result is not None:
+                team_id = result['team_id']  # TO-DO verify keys
+                sql = "UPDATE `team_list` SET `name` = %s WHERE `team_list`.`id` = %s;"
+                cursor.execute(sql, (name, team_id))
+                conn.commit()
+            else:
+                message = "Не знайдено каманду закріплену за вами.\n" \
+                          "Як ви взагалі сюди попали ? 🧐"
+                send_msg(chat_id=chat_id, text=message)
+
+    except Exception as e:
+        print("Got database error at registration_enterKey function\nException: " + e.__doc__)
+
+    finally:
+        conn.close()
+

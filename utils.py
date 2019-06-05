@@ -221,10 +221,20 @@ def registration_commandName(r):
             cursor.execute(sql, chat_id)
             result = cursor.fetchone()
             if result is not None:
-                team_id = result['team_id']  # TO-DO verify keys
-                sql = "UPDATE `team_list` SET `name` = %s WHERE `team_list`.`id` = %s;"
-                cursor.execute(sql, (name, team_id))
+                team_caitan_id = result['id']  # TO-DO verify keys
+                sql = "UPDATE `team_list` SET `name` = %s WHERE `team_list`.`captain_id` = %s;"
+                cursor.execute(sql, (name, team_caitan_id))
                 conn.commit()
+
+                message = "Успішно встановлено назву команди."
+                send_msg(chat_id=chat_id, text=message)
+
+                sql = "UPDATE `users_status` SET `status` = %s WHERE `users_status`.`chat_id` = %s;"
+                cursor.execute(sql, (status.Status.captainName.value, chat_id))
+                conn.commit()
+
+                message = "Введіть прізвище та ім'я капітана команди:"
+                send_msg(chat_id=chat_id, text=message)
             else:
                 message = "Не знайдено каманду закріплену за вами.\n" \
                           "Як ви взагалі сюди попали ? 🧐"

@@ -51,30 +51,7 @@ def msg_handler():
 
             if len(result) > 0:
                 for row in result:
-                    if row['status'] == status.Status.keyEnter.value:
-
-                        ############# TO-DO #############
-                        # Probably better to do universal parser for every status
-                        try:
-                            msg_text = r['message']['text']
-                            utils.registration_enterKey(key=msg_text, chat_id=chat_id)
-                        except Exception as e:
-                            print("Couldn't find msg text, suggesting verify input \nException: " + e.__doc__)
-                            message = status.statusErrorMsg[status.Status.keyEnter.value]
-                            utils.send_msg(chat_id, message)
-                        ############# ^TO-DO^ #############
-                    if row['status'] == status.Status.commandName.value:
-
-                        ############# TO-DO #############
-                        # Probably better to do universal parser for every status
-                        try:
-                            msg_text = r['message']['text']
-                            utils.registration_commandName(name=msg_text, chat_id=chat_id)
-                        except Exception as e:
-                            print("Couldn't find msg text, suggesting verify input \nException: " + e.__doc__)
-                            message = status.statusErrorMsg[status.Status.commandName.value]
-                            utils.send_msg(chat_id, message)
-                        ############# ^TO-DO^ #############
+                    status.stagesMap[row['status']](r)
             else:
                 try:
                     msg_text = r['message']['text']
@@ -126,7 +103,8 @@ def msg_handler():
                             command_found = True
                             break
                     if not command_found and msg_text != "":
-                        message = "Ви написали: '" + msg_text + "'"
+                        message = "ВИбачте я вас не розумію.\n" \
+                                  "Скористайтеся командою /menu для отримння меню з доступними функціями."
                         utils.send_msg(chat_id, message)
 
         return jsonify(r)

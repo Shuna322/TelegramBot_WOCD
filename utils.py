@@ -1,6 +1,5 @@
 import requests
 import settings
-import status
 
 
 def send_msg(chat_id, text, button_markup=None):
@@ -13,6 +12,7 @@ def send_msg(chat_id, text, button_markup=None):
         except:
             print("parse markup error")
     r = requests.post(url, json=answer)
+    print("Send:")
     print(r.json())
     return r.json()
 
@@ -128,7 +128,8 @@ def registration_cancel(chat_id):
         conn.close()
 
 
-def registration_enterKey(key, chat_id):
+def registration_enterKey(r):
+    import status
     import pymysql.cursors
     conn = pymysql.connect(host=settings.database_host,
                            user=settings.database_user,
@@ -136,6 +137,14 @@ def registration_enterKey(key, chat_id):
                            db=settings.database_DB,
                            charset='utf8mb4',
                            cursorclass=pymysql.cursors.DictCursor)
+    chat_id = r['message']['chat']['id']
+    try:
+        key = r['message']['text']
+    except Exception as e:
+        print("Couldn't find msg text, suggesting verify input \nException: " + e.__doc__)
+        message = status.statusErrorMsg[status.Status.keyEnter.value]
+        send_msg(chat_id, message)
+
     try:
         with conn.cursor() as cursor:
             sql = "SELECT * FROM `classes` WHERE `reg_key`= %s"

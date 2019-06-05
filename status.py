@@ -1,6 +1,7 @@
 import enum
 import utils
 
+
 class Status(enum.Enum):
     keyEnter = "11"
     commandName = "12"
@@ -17,6 +18,7 @@ statusErrorMsg = {
     Status.teammateName: "Не введено підходящих данних, будь ласка введіть Прзівище та Ім'я члена команди"
 }
 
-# stagesMap = {
-#     Status.keyEnter: utils.registration_enterKey
-# }
+stagesMap = {
+    Status.keyEnter.value: utils.registration_enterKey
+    # Status.commandName.value: utils.registration_commandName
+}

@@ -75,7 +75,7 @@ def registration_start():
     return 0
 
 
-def registration_cancel(username, chat_id):
+def registration_cancel(chat_id):
     import pymysql.cursors
     conn = pymysql.connect(host=settings.database_host,
                            user=settings.database_user,
@@ -85,31 +85,31 @@ def registration_cancel(username, chat_id):
                            cursorclass=pymysql.cursors.DictCursor)
     try:
         with conn.cursor() as cursor:
-            sql = "SELECT * FROM `users_status` WHERE `user_name` = %s"
-            cursor.execute(sql, username)
+            sql = "SELECT * FROM `users_status` WHERE `chat_id` = %s"
+            cursor.execute(sql, chat_id)
             result = cursor.fetchone()
             if result is not None:
                 user_status_id = result['id']
-                user_status_teamid = result['team_id']
+                if result['team_id'] is not None:
+                    user_status_teamid = result['team_id']
+                    sql = "SELECT * FROM `team_list` WHERE `class_id` = %s"
+                    cursor.execute(sql, user_status_teamid)
+                    result2 = cursor.fetchone()
+                    team_list_id = result2['id']
+                    team_list_id_captain_id = result2['captain_id']
+                    if result2['members_id'] is not None:
+                        team_list_members_id = str.split(result2['members_id'], ",")
+                        for member_id in team_list_members_id:
+                            sql = "DELETE FROM `members` WHERE `id` = %s"
+                            cursor.execute(sql, member_id)
+                            conn.commit()
+                    sql = "DELETE FROM `members` WHERE `id` = %s"
+                    cursor.execute(sql, team_list_id_captain_id)
+                    conn.commit()
 
-                sql = "SELECT * FROM `team_list` WHERE `class_id` = %s"
-                cursor.execute(sql, user_status_teamid)
-                result2 = cursor.fetchone()
-                team_list_id = result2['id']
-                team_list_id_captain_id = result2['captain_id']
-                if result2['members_id'] is not None:
-                    team_list_members_id = str.split(result2['members_id'], ",")
-                    for member_id in team_list_members_id:
-                        sql = "DELETE FROM `members` WHERE `id` = %s"
-                        cursor.execute(sql, member_id)
-                        conn.commit()
-                sql = "DELETE FROM `members` WHERE `id` = %s"
-                cursor.execute(sql, team_list_id_captain_id)
-                conn.commit()
-
-                sql = "DELETE FROM `team_list` WHERE `id` = %s"
-                cursor.execute(sql, team_list_id)
-                conn.commit()
+                    sql = "DELETE FROM `team_list` WHERE `id` = %s"
+                    cursor.execute(sql, team_list_id)
+                    conn.commit()
 
                 sql = "DELETE FROM `users_status` WHERE `id` = %s"
                 cursor.execute(sql, user_status_id)
@@ -128,7 +128,7 @@ def registration_cancel(username, chat_id):
         conn.close()
 
 
-def registration_enterKey(key, username, chat_id):
+def registration_enterKey(key, chat_id):
     import pymysql.cursors
     conn = pymysql.connect(host=settings.database_host,
                            user=settings.database_user,
@@ -142,29 +142,38 @@ def registration_enterKey(key, username, chat_id):
             cursor.execute(sql, key)
             result = cursor.fetchone()
             classid = result["id"]
+            class_name = result["class"]
             if result is not None:
-                message = "Введено правильний ключ, обрано групу: '" + result["class"] + "'."
-                sql = "UPDATE `users_status` SET `status` = %s, `team_id` = '%s' WHERE `users_status`.`user_name` = %s;"
-                cursor.execute(sql, (status.Status.commandName.value, result['id'], username))
-                conn.commit()
-
-                sql = "INSERT INTO `members` VALUES (NULL, NULL, '1', %s, NULL);"
-                cursor.execute(sql, username)
-                conn.commit()
-
-                sql = "SELECT * FROM `members` WHERE `telegram_username`= %s"
-                cursor.execute(sql, username)
+                sql = "SELECT * FROM `team_list` WHERE class_id = %s"
+                cursor.execute(sql, classid)
                 result = cursor.fetchone()
-                capitanid = result['id']
+                if result is not None:
+                    message = "Вибачте, але данну групу вже зареєтровано, спробуйте ввестиключ ще раз, або натисніть /cancel"
+                    send_msg(chat_id=chat_id, text=message)
+                else:
+                    message = "Введено правильний ключ, обрано групу: '" + class_name + "'."
+                    sql = "UPDATE `users_status` SET `status` = %s, `team_id` = '%s' WHERE `users_status`.`chat_id` = %s;"
+                    cursor.execute(sql, (status.Status.commandName.value, classid, chat_id))
+                    conn.commit()
 
-                sql = "INSERT INTO `team_list` VALUES (NULL, NULL, %s, %s, NULL);"
-                cursor.execute(sql, (classid, capitanid))
-                conn.commit()
+                    sql = "INSERT INTO `members` VALUES (NULL, NULL, '1', %s, NULL);"
+                    cursor.execute(sql, chat_id)
+                    conn.commit()
 
-                send_msg(chat_id=chat_id, text=message)
+                    sql = "SELECT * FROM `members` WHERE `chat_id`= %s"
+                    cursor.execute(sql, chat_id)
+                    result = cursor.fetchone()
+                    capitanid = result['id']
 
-                message = "Введіть назву команди:"
-                send_msg(chat_id=chat_id, text=message)
+                    sql = "INSERT INTO `team_list` VALUES (NULL, NULL, %s, %s, NULL);"
+                    cursor.execute(sql, (classid, capitanid))
+                    conn.commit()
+
+                    send_msg(chat_id=chat_id, text=message)
+
+                    message = "Введіть назву команди:"
+                    send_msg(chat_id=chat_id, text=message)
+
             else:
                 message = "Не знайдено команду з даним ключем, спробуйте ще раз."
                 send_msg(chat_id=chat_id, text=message)

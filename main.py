@@ -18,7 +18,7 @@ def msg_handler():
         print(r)
 
         chat_id = r['message']['chat']['id']
-        username = r['message']['chat']['username']
+        # username = r['message']['chat']['username']
         msg_text = None
 
         result = None
@@ -36,13 +36,13 @@ def msg_handler():
         except Exception as e:
             print("Couldn't find text in msg, probably msg without text was send \nException: " + e.__doc__)
         if msg_text == "/cancel":
-            utils.registration_cancel(username=username, chat_id=chat_id)
+            utils.registration_cancel(chat_id=chat_id)
         else:
             try:
                 with conn.cursor() as cursor:
                     # Read a single record
-                    sql = "SELECT * FROM `users_status` WHERE `user_name` = %s;"
-                    cursor.execute(sql, (username,))
+                    sql = "SELECT * FROM `users_status` WHERE `chat_id` = %s;"
+                    cursor.execute(sql, (chat_id,))
                     result = cursor.fetchall()
             except Exception as e:
                 print("Got DB ex: " + e.__doc__)
@@ -57,7 +57,7 @@ def msg_handler():
                         # Probably better to do universal parser for every status
                         try:
                             msg_text = r['message']['text']
-                            utils.registration_enterKey(key=msg_text, username=username, chat_id=chat_id)
+                            utils.registration_enterKey(key=msg_text, chat_id=chat_id)
                         except Exception as e:
                             print("Couldn't find msg text, suggesting verify input \nException: " + e.__doc__)
                             message = status.statusErrorMsg[status.Status.keyEnter.value]
@@ -69,7 +69,7 @@ def msg_handler():
                         # Probably better to do universal parser for every status
                         try:
                             msg_text = r['message']['text']
-                            utils.registration_commandName(name=msg_text, username=username, chat_id=chat_id)
+                            utils.registration_commandName(name=msg_text, chat_id=chat_id)
                         except Exception as e:
                             print("Couldn't find msg text, suggesting verify input \nException: " + e.__doc__)
                             message = status.statusErrorMsg[status.Status.commandName.value]
@@ -92,8 +92,8 @@ def msg_handler():
                                            cursorclass=pymysql.cursors.DictCursor)
                     try:
                         with conn.cursor() as cursor:
-                            sql = "INSERT INTO `users_status` (`id`, `user_name`, `status`, `team_id`) VALUES (NULL, %s, %s, NULL);"
-                            cursor.execute(sql, (username, status.Status.keyEnter.value))
+                            sql = "INSERT INTO `users_status` (`id`, `chat_id`, `status`, `team_id`) VALUES (NULL, %s, %s, NULL);"
+                            cursor.execute(sql, (chat_id, status.Status.keyEnter.value))
                             conn.commit()
                             message = "Розпочато реєстрацю, введіть персональний ключ"
                             utils.send_msg(chat_id, message)

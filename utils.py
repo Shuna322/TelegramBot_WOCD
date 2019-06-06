@@ -288,7 +288,7 @@ def registration_captainName(r):
 
     except Exception as e:
         print("Got database error at registration_enterKey function\nException: " + e.__doc__)
-        message = "Сталася невідома помилка, код 131 🤷‍"
+        message = "Сталася невідома помилка, код " + status.Status.captainName.value + " 🤷‍"
         send_msg(chat_id=chat_id, text=message)
 
     finally:
@@ -343,10 +343,101 @@ def registration_captainPhoneNumber(r):
 
         except Exception as e:
             print("Got database error at registration_enterKey function\nException: " + e.__doc__)
-            message = "Сталася невідома помилка, код 131 🤷‍"
+            message = "Сталася невідома помилка, код " + status.Status.captainPhoneNumber.value + " 🤷‍"
             send_msg(chat_id=chat_id, text=message)
 
         finally:
             conn.close()
+
+def registration_teammateName(r):
+    import pymysql.cursors
+    conn = pymysql.connect(host=settings.database_host,
+                           user=settings.database_user,
+                           password=settings.database_user_pass,
+                           db=settings.database_DB,
+                           charset='utf8mb4',
+                           cursorclass=pymysql.cursors.DictCursor)
+
+    import status
+    chat_id = r['message']['chat']['id']
+    try:
+        name = r['message']['text']
+    except Exception as e:
+        print("Couldn't find msg text, suggesting verify input \nException: " + e.__doc__)
+        message = status.statusErrorMsg[status.Status.teammateName.value]
+        send_msg(chat_id, message)
+        conn.close()
+        return
+
+    try:
+        with conn.cursor() as cursor:
+            sql = "INSERT INTO `members` VALUES (NULL, %s, '0', NULL, NULL);"
+            cursor.execute(sql, name)
+            conn.commit()
+
+            sql = "SELECT * FROM `members` WHERE `name` = %s;"
+            cursor.execute(sql, name)
+            result = cursor.fetchone()
+
+            new_member_id = result['id']
+
+            sql = "SELECT * FROM `members`, `team_list` WHERE `members`.`chat_id` = %s AND `members`.`id` = `team_list`.`captain_id`;"
+            cursor.execute(sql, chat_id)
+            result = cursor.fetchone()
+            members_ids = None
+            array_members_ids = None
+            if result['members_id'] is not None:
+                members_ids = result['members_id']
+                array_members_ids = members_ids.split(",")
+
+                members_ids = members_ids + str(new_member_id)
+
+                if len(array_members_ids) < 7:  # TO-DO Добавити веревірку з точною кількістю студентів з настройок
+                    members_ids = members_ids + ","
+                    message = "Успішно встановлено данні для члена команди."
+                    send_msg(chat_id=chat_id, text=message)
+
+                if len(array_members_ids) == 7:
+                    message = "Успішно встановлено данні всіх членів команди."
+                    send_msg(chat_id=chat_id, text=message)
+
+                    sql = "UPDATE `users_status` SET `status` = %s WHERE `users_status`.`chat_id` = %s;"
+                    # TO-DO добавити кнопочки для відповіді
+                    cursor.execute(sql, (status.Status.registrationVerification.value, chat_id))
+                    conn.commit()
+
+                    # TO-DO Перечислити всі дані
+                    message = "Будь ласка підтвердіть правильність введених даних:"
+                    send_msg(chat_id=chat_id, text=message)
+
+            else:
+                members_ids = str(new_member_id) + ","
+                message = "Успішно встановлено данні всіх членів команди."
+                send_msg(chat_id=chat_id, text=message)
+
+            sql = "UPDATE `team_list`, `members` SET `team_list`.`members_id` = %s WHERE `team_list`.`captain_id` = `members`.`id` AND `members`.`chat_id` = %s;"
+            cursor.execute(sql, (members_ids, chat_id))
+            conn.commit()
+
+
+            # button_markup_clear = "eydyZW1vdmVfa2V5Ym9hcmQnOlRydWV9"
+            #
+            # message = "Успішно встановлено данні капітана."
+            # send_msg(chat_id=chat_id, text=message, button_markup=button_markup_clear)
+            #
+            # sql = "UPDATE `users_status` SET `status` = %s WHERE `users_status`.`chat_id` = %s;"
+            # cursor.execute(sql, (status.Status.teammateName.value, chat_id))
+            # conn.commit()
+            #
+            # message = "Введіть прізвище та ім'я члена команди:"
+            # send_msg(chat_id=chat_id, text=message, button_markup=button_markup_clear)
+
+    except Exception as e:
+        print("Got database error at registration_enterKey function\nException: " + e.__doc__)
+        message = "Сталася невідома помилка, код " + status.Status.teammateName.value + " 🤷‍"
+        send_msg(chat_id=chat_id, text=message)
+
+    finally:
+        conn.close()
 
 

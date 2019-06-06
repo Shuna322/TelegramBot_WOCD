@@ -31,10 +31,10 @@ def msg_handler():
                                db=settings.database_DB,
                                charset='utf8mb4',
                                cursorclass=pymysql.cursors.DictCursor)
-        try:
+        if 'text' in r['message']:
             msg_text = r['message']['text']
-        except Exception as e:
-            print("Couldn't find text in msg, probably msg without text was send \nException: " + e.__doc__)
+        if 'contact' in r['message']:
+            msg_text = r['message']['contact']['phone_number']
         if msg_text == "/cancel":
             utils.registration_cancel(chat_id=chat_id)
         else:
@@ -57,7 +57,7 @@ def msg_handler():
                     msg_text = r['message']['text']
                 except Exception as e:
                     print("Couldn't find text in msg, probably msg without text was send \nException: " + e.__doc__)
-                    message = "Ви прислали повідомлення без тексту.\n" + \
+                    message = "Ви відправили повідомлення без тексту.\n" + \
                               "Скористайтеся командою /menu для отримння меню з доступними функціями."
                     utils.send_msg(chat_id, message)
                 if msg_text == "/register":
@@ -96,14 +96,14 @@ def msg_handler():
                         print("Got DB ex: " + e.__doc__)
                     finally:
                         conn.close()
-
-                    for row in result:
-                        if row['command'] in msg_text:
-                            utils.send_msg(chat_id, row['respond_text'], row['respond_button_markup'])
-                            command_found = True
-                            break
+                    if result is not None and msg_text is not None:
+                        for row in result:
+                            if row['command'] in msg_text:
+                                utils.send_msg(chat_id, row['respond_text'], row['respond_button_markup'])
+                                command_found = True
+                                break
                     if not command_found and msg_text != "":
-                        message = "ВИбачте я вас не розумію.\n" \
+                        message = "Вибачте я вас не розумію.\n" \
                                   "Скористайтеся командою /menu для отримння меню з доступними функціями."
                         utils.send_msg(chat_id, message)
 

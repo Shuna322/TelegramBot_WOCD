@@ -20,5 +20,8 @@ statusErrorMsg = {
 
 stagesMap = {
     Status.keyEnter.value: utils.registration_enterKey,
-    Status.commandName.value: utils.registration_commandName
+    Status.commandName.value: utils.registration_commandName,
+    Status.captainName.value: utils.registration_captainName,
+    Status.captainPhoneNumber.value: utils.registration_captainPhoneNumber,
+    # Status.teammateName.value: utils.registration_teammateName
 }

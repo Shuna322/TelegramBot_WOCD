@@ -115,8 +115,10 @@ def registration_cancel(chat_id):
                 cursor.execute(sql, user_status_id)
                 conn.commit()
 
+                button_markup_clear = "eydyZW1vdmVfa2V5Ym9hcmQnOlRydWV9"
+
                 message = "Операцію відмінео !"
-                send_msg(chat_id=chat_id, text=message)
+                send_msg(chat_id=chat_id, text=message, button_markup=button_markup_clear)
             else:
                 message = "Немає чого відміняти"
                 send_msg(chat_id=chat_id, text=message)
@@ -210,7 +212,7 @@ def registration_commandName(r):
         name = r['message']['text']
     except Exception as e:
         print("Couldn't find msg text, suggesting verify input \nException: " + e.__doc__)
-        message = status.statusErrorMsg[status.Status.keyEnter.value]
+        message = status.statusErrorMsg[status.Status.commandName.value]
         send_msg(chat_id, message)
         conn.close()
         return
@@ -245,4 +247,106 @@ def registration_commandName(r):
 
     finally:
         conn.close()
+
+def registration_captainName(r):
+    import pymysql.cursors
+    conn = pymysql.connect(host=settings.database_host,
+                           user=settings.database_user,
+                           password=settings.database_user_pass,
+                           db=settings.database_DB,
+                           charset='utf8mb4',
+                           cursorclass=pymysql.cursors.DictCursor)
+
+    import status
+    chat_id = r['message']['chat']['id']
+    try:
+        name = r['message']['text']
+    except Exception as e:
+        print("Couldn't find msg text, suggesting verify input \nException: " + e.__doc__)
+        message = status.statusErrorMsg[status.Status.captainName.value]
+        send_msg(chat_id, message)
+        conn.close()
+        return
+
+    try:
+        with conn.cursor() as cursor:
+            sql = "UPDATE `members` SET `name` = %s WHERE `members`.`chat_id` = %s;"
+            cursor.execute(sql, (name, chat_id))
+            conn.commit()
+
+            message = "Успішно встановлено данні капітана."
+            send_msg(chat_id=chat_id, text=message)
+
+            sql = "UPDATE `users_status` SET `status` = %s WHERE `users_status`.`chat_id` = %s;"
+            cursor.execute(sql, (status.Status.captainPhoneNumber.value, chat_id))
+            conn.commit()
+
+            button_markup_request_phone = "eydrZXlib2FyZCc6W1t7J3RleHQnOifQndCw0LTQsNGC0Lgg0L3QvtC80LXRgCDRgtC10LvQtdGE0L7QvdGDJywncmVxdWVzdF9jb250YWN0JzpUcnVlfV1dLCdyZXNpemVfa2V5Ym9hcmQnOlRydWUsJ29uZV90aW1lX2tleWJvYXJkJzpUcnVlfQ=="
+
+            message = "Введіть номер телефону капітана у форматі (+380XXXXXXXXX), або натиніть на запропоновану кнопку:"
+            send_msg(chat_id=chat_id, text=message, button_markup=button_markup_request_phone)
+
+    except Exception as e:
+        print("Got database error at registration_enterKey function\nException: " + e.__doc__)
+        message = "Сталася невідома помилка, код 131 🤷‍"
+        send_msg(chat_id=chat_id, text=message)
+
+    finally:
+        conn.close()
+
+def registration_captainPhoneNumber(r):
+    import pymysql.cursors
+    conn = pymysql.connect(host=settings.database_host,
+                           user=settings.database_user,
+                           password=settings.database_user_pass,
+                           db=settings.database_DB,
+                           charset='utf8mb4',
+                           cursorclass=pymysql.cursors.DictCursor)
+
+    import status
+    chat_id = r['message']['chat']['id']
+    parse_success = [False, False]
+
+    if 'text' in r['message']:
+        phone = r['message']['text']
+        parse_success[0] = True
+    if 'contact' in r['message']:
+        phone = r['message']['contact']['phone_number']
+        parse_success[1] = True
+    button_markup_request_phone = "eydrZXlib2FyZCc6W1t7J3RleHQnOifQndCw0LTQsNGC0Lgg0L3QvtC80LXRgCDRgtC10LvQtdGE0L7QvdGDJywncmVxdWVzdF9jb250YWN0JzpUcnVlfV1dLCdyZXNpemVfa2V5Ym9hcmQnOlRydWUsJ29uZV90aW1lX2tleWJvYXJkJzpUcnVlfQ=="
+    import re
+    if not re.compile('\+?380[50,63,66,67,68,73,89,91,92,93,94,95,96,97,98,99]\d{6,9}').match(phone):
+        message = "Введено не правильний номер телефону\n" \
+                  "Введіть номер телефону капітана у форматі (+380XXXXXXXXX), або натиніть на запропоновану кнопку:"
+        send_msg(chat_id=chat_id, text=message, button_markup=button_markup_request_phone)
+        return
+    else:
+        try:
+            with conn.cursor() as cursor:
+                sql = "UPDATE `members` SET `phone_number` = %s WHERE `members`.`chat_id` = %s;"
+                cursor.execute(sql, (phone, chat_id))
+                conn.commit()
+
+                button_markup_clear = "eydyZW1vdmVfa2V5Ym9hcmQnOlRydWV9"
+
+
+                message = "Успішно встановлено данні капітана."
+                send_msg(chat_id=chat_id, text=message, button_markup=button_markup_clear)
+
+                sql = "UPDATE `users_status` SET `status` = %s WHERE `users_status`.`chat_id` = %s;"
+                cursor.execute(sql, (status.Status.teammateName.value, chat_id))
+                conn.commit()
+
+
+                message = "Введіть прізвище та ім'я члена команди:"
+                send_msg(chat_id=chat_id, text=message, button_markup=button_markup_clear)
+
+        except Exception as e:
+            print("Got database error at registration_enterKey function\nException: " + e.__doc__)
+            message = "Сталася невідома помилка, код 131 🤷‍"
+            send_msg(chat_id=chat_id, text=message)
+
+        finally:
+            conn.close()
+
 

@@ -30,8 +30,9 @@ def setup_and_run_ngrok():
         # os.system("taskkill /f /im ngrok.exe")
 
         # os.popen('taskkill /f /im ngrok.exe')
+        FNULL = open(os.devnull, 'w')
 
-        subprocess.Popen(["taskkill", "/f", "/im", "ngrok.exe"])
+        subprocess.Popen(["taskkill", "/f", "/im", "ngrok.exe"], stdout=FNULL, stderr=subprocess.STDOUT)
         from time import sleep
         sleep(2)
         subprocess.Popen(["ngrok.exe", "http", "5000"])

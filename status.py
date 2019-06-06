@@ -26,5 +26,5 @@ stagesMap = {
     Status.captainName.value: utils.registration_captainName,
     Status.captainPhoneNumber.value: utils.registration_captainPhoneNumber,
     Status.teammateName.value: utils.registration_teammateName,
-    # Status.registrationVerification: utils.registration_registrationVerification
+    Status.registrationVerification: utils.registration_registrationVerification
 }

@@ -8,6 +8,7 @@ import utils
 import status
 
 app = Flask(__name__)
+app.debug = True
 
 
 @app.route('/bot', methods=['POST', 'GET'])
@@ -117,9 +118,7 @@ def msg_handler():
 
 
 if __name__ == '__main__':
-    # app.run(host='0.0.0.0')
     utils.delete_old_webhook()
-
     from threading import Thread
 
     run_ngrook = Thread(utils.setup_and_run_ngrok())
@@ -127,15 +126,29 @@ if __name__ == '__main__':
 
     utils.set_webhook_info(utils.get_ngrok_url())
 
-    app.run()
+    from gevent.pywsgi import WSGIServer
+    http_server = WSGIServer(('localhost', 5000), application=app)
+    print("Server is running !")
+    http_server.serve_forever()
 
-    # try:
-    #     with conn.cursor() as cursor:
-    #         # Read a single record
-    #         sql = "SELECT * FROM `commands_list`"
-    #         cursor.execute(sql)
-    #         result = cursor.fetchall()
-    #         print(result)
-    # finally:
-    #     conn.close()
+    ##############################
+
+    ################
+    # Команда для створення сертифікату:
+    # bin\openssl req -newkey rsa:2048 -sha256 -nodes -keyout YOURPRIVATE.key -x509 -days 365 -out YOURPUBLIC.pem -subj "/C=US/ST=New York/L=Brooklyn/O=Example Brooklyn Company/CN=109.162.4.106"
+    ################
+
+    # utils.delete_old_webhook()
+    # url = settings.URL + "setWebhook"
+    # answer = {
+    #     'url': "https://109.162.4.106:443/bot"
+    # }
+    # files = {'certificate': open("openssl/YOURPUBLIC.pem", 'r')}
+    # r1 = requests.post(url, data=answer, files=files)
+    # print("Webhook set !")
     #
+    # from gevent.pywsgi import WSGIServer
+    #
+    # http_server = WSGIServer(('0.0.0.0', 443), application=app, keyfile='openssl/YOURPRIVATE.key', certfile='openssl/YOURPUBLIC.pem')
+    # print("Server is running !")
+    # http_server.serve_forever()

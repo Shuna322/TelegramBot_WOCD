@@ -527,17 +527,47 @@ def registration_registrationVerification(r):
                     send_msg(chat_id=chat_id, text=message)
 
                 if len(array_members_ids) == 7:
+                    sql = "UPDATE `team_list`, `members` SET `team_list`.`members_id` = %s WHERE `team_list`.`captain_id` = `members`.`id` AND `members`.`chat_id` = %s;"
+                    cursor.execute(sql, (members_ids, chat_id))
+                    conn.commit()
+
                     message = "Успішно встановлено данні всіх членів команди."
                     send_msg(chat_id=chat_id, text=message)
 
                     sql = "UPDATE `users_status` SET `status` = %s WHERE `users_status`.`chat_id` = %s;"
-                    # TO-DO добавити кнопочки для відповіді
                     cursor.execute(sql, (status.Status.registrationVerification.value, chat_id))
                     conn.commit()
 
-                    # TO-DO Перечислити всі дані
+                    verification_buttons_markup = "eydrZXlib2FyZCc6W1t7J3RleHQnOifQktGW0LTQvNGW0L3QsCDinYwnfSx7J3RleHQnOifQn9GA0LDQstC40LvRjNC90L4g4pyU77iPJ31dXSwncmVzaXplX2tleWJvYXJkJzpUcnVlLCdvbmVfdGltZV9rZXlib2FyZCc6VHJ1ZX0="
+
+                    sql = "SELECT * FROM `members`, `team_list`, `classes` WHERE `members`.`chat_id` = %s AND `members`.`id` = `team_list`.`captain_id` AND `team_list`.`class_id` = `classes`.`id`;"
+                    cursor.execute(sql, chat_id)
+                    result = cursor.fetchone()
+
                     message = "Будь ласка підтвердіть правильність введених даних:"
-                    send_msg(chat_id=chat_id, text=message)
+                    command_class = result['class']
+                    command_name = result['team_list.name']
+                    captain_name = result['name']
+                    captain_phone = result['phone_number']
+                    team_ids_array = result['members_id'].split(",")
+                    team_names_array = []
+                    for member_id in team_ids_array:
+                        sql = "SELECT * FROM `members` WHERE `members`.`id` = %s;"
+                        cursor.execute(sql, member_id)
+                        result = cursor.fetchone()
+                        team_names_array.append(result['name'])
+
+                    # TO-DO Перечислити всі дані
+                    message = "Будь ласка підтвердіть правильність введених даних:\n" \
+                              "Група: '"+command_class+"'\n" \
+                              "Назва команди: '"+command_name+"'\n" \
+                              "Прізвище Ім'я капітана: '"+captain_name+"'\n" \
+                              "Номер телефону капітана: '"+captain_phone+"'\n" \
+                              "Данні членів команди"
+                    for name in team_names_array:
+                        message = message + "'"+name+"'\n"
+
+                    send_msg(chat_id=chat_id, text=message, button_markup=verification_buttons_markup)
 
             else:
                 members_ids = str(new_member_id) + ","

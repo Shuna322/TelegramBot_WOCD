@@ -3,12 +3,12 @@ import utils
 
 
 class Status(enum.Enum):
+    registrationVerification = "10"
     keyEnter = "11"
     commandName = "12"
     captainName = "131"
     captainPhoneNumber = "132"
     teammateName = "14"
-    registrationVerification = "10"
 
 
 statusErrorMsg = {
@@ -26,5 +26,5 @@ stagesMap = {
     Status.captainName.value: utils.registration_captainName,
     Status.captainPhoneNumber.value: utils.registration_captainPhoneNumber,
     Status.teammateName.value: utils.registration_teammateName,
-    Status.registrationVerification: utils.registration_registrationVerification
+    Status.registrationVerification.value: utils.registration_registrationVerification
 }

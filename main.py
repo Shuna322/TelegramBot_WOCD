@@ -118,6 +118,7 @@ def msg_handler():
 
 
 if __name__ == '__main__':
+    settings.parse_external_settings()
     utils.delete_old_webhook()
     from threading import Thread
 

@@ -442,15 +442,16 @@ def registration_teammateName(r):
                               "Група: '"+command_class+"'\n" \
                               "Назва команди: '"+command_name+"'\n" \
                               "Прізвище Ім'я капітана: '"+captain_name+"'\n" \
-                              "Номер телефону капітана: '"+captain_phone+"'\n"
+                              "Номер телефону капітана: '"+captain_phone+"'\n" \
+                              "Данні членів команди"
                     for name in team_names_array:
-                        message = message + "Прізвище Ім'я члена команди: '"+name+"'\n"
+                        message = message + "'"+name+"'\n"
 
                     send_msg(chat_id=chat_id, text=message, button_markup=verification_buttons_markup)
 
             else:
                 members_ids = str(new_member_id) + ","
-                message = "Успішно встановлено данні всіх членів команди."
+                message = "Успішно встановлено данні члена команди."
                 send_msg(chat_id=chat_id, text=message)
 
 

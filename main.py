@@ -37,7 +37,7 @@ def msg_handler():
         if 'contact' in r['message']:
             msg_text = r['message']['contact']['phone_number']
         if msg_text == "/cancel":
-            utils.registration_cancel(chat_id=chat_id)
+            utils.Registration.registration_cancel(chat_id=chat_id)
         else:
             try:
                 with conn.cursor() as cursor:
@@ -61,26 +61,8 @@ def msg_handler():
                     message = "Ви відправили повідомлення без тексту.\n" + \
                               "Скористайтеся командою /menu для отримння меню з доступними функціями."
                     utils.send_msg(chat_id, message)
-                if msg_text == "/register":
-                    conn = pymysql.connect(host=settings.database_host,
-                                           user=settings.database_user,
-                                           password=settings.database_user_pass,
-                                           db=settings.database_DB,
-                                           charset='utf8mb4',
-                                           cursorclass=pymysql.cursors.DictCursor)
-                    try:
-                        with conn.cursor() as cursor:
-                            sql = "INSERT INTO `users_status` (`id`, `chat_id`, `status`, `team_id`) VALUES (NULL, %s, %s, NULL);"
-                            cursor.execute(sql, (chat_id, status.Status.keyEnter.value))
-                            conn.commit()
-                            message = "Розпочато реєстрацю, введіть персональний ключ"
-                            utils.send_msg(chat_id, message)
-                    except Exception as e:
-                        print("Got DB ex: " + e.__doc__)
-                        message = "Сталася помилка при роботі з базою данних"
-                        utils.send_msg(chat_id, message)
-                    finally:
-                        conn.close()
+                if msg_text == "Реєстрація ✏️":
+                    utils.Registration.registration_start(chat_id)
                 else:
                     conn = pymysql.connect(host=settings.database_host,
                                            user=settings.database_user,

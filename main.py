@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 import requests
-import json
 import pymysql.cursors
 
 import settings
@@ -18,7 +17,10 @@ def msg_handler():
         print("Received:")
         print(r)
 
-        chat_id = r['message']['chat']['id']
+        if 'message' in r:
+            chat_id = r['message']['chat']['id']
+        elif 'edited_message' in r:
+            chat_id = r['edited_message']['chat']['id']
         # username = r['message']['chat']['username']
         msg_text = None
 
@@ -32,10 +34,16 @@ def msg_handler():
                                db=settings.database_DB,
                                charset='utf8mb4',
                                cursorclass=pymysql.cursors.DictCursor)
-        if 'text' in r['message']:
-            msg_text = r['message']['text']
-        if 'contact' in r['message']:
-            msg_text = r['message']['contact']['phone_number']
+        if 'message' in r:
+            if 'text' in r['message']:
+                msg_text = r['message']['text']
+            if 'contact' in r['message']:
+                msg_text = r['message']['contact']['phone_number']
+        elif 'edited_message' in r:
+            if 'text' in r['edited_message']:
+                msg_text = r['edited_message']['text']
+            if 'contact' in r['edited_message']:
+                msg_text = r['edited_message']['contact']['phone_number']
         if msg_text == "/cancel":
             utils.Registration.registration_cancel(chat_id=chat_id)
         else:
@@ -101,18 +109,18 @@ def msg_handler():
 
 if __name__ == '__main__':
     settings.parse_external_settings()
-    utils.delete_old_webhook()
-    from threading import Thread
-
-    run_ngrook = Thread(utils.setup_and_run_ngrok())
-    run_ngrook.start()
-
-    utils.set_webhook_info(utils.get_ngrok_url())
-
-    from gevent.pywsgi import WSGIServer
-    http_server = WSGIServer(('localhost', 5000), application=app)
-    print("Server is running !")
-    http_server.serve_forever()
+    # utils.delete_old_webhook()
+    # from threading import Thread
+    #
+    # run_ngrook = Thread(utils.setup_and_run_ngrok())
+    # run_ngrook.start()
+    #
+    # utils.set_webhook_info(utils.get_ngrok_url())
+    #
+    # from gevent.pywsgi import WSGIServer
+    # http_server = WSGIServer(('localhost', 5000), application=app)
+    # print("Server is running !")
+    # http_server.serve_forever()
 
     ##############################
 
@@ -121,17 +129,17 @@ if __name__ == '__main__':
     # bin\openssl req -newkey rsa:2048 -sha256 -nodes -keyout YOURPRIVATE.key -x509 -days 365 -out YOURPUBLIC.pem -subj "/C=US/ST=New York/L=Brooklyn/O=Example Brooklyn Company/CN=109.162.4.106"
     ################
 
-    # utils.delete_old_webhook()
-    # url = settings.URL + "setWebhook"
-    # answer = {
-    #     'url': "https://109.162.4.106:443/bot"
-    # }
-    # files = {'certificate': open("openssl/YOURPUBLIC.pem", 'r')}
-    # r1 = requests.post(url, data=answer, files=files)
-    # print("Webhook set !")
-    #
-    # from gevent.pywsgi import WSGIServer
-    #
-    # http_server = WSGIServer(('0.0.0.0', 443), application=app, keyfile='openssl/YOURPRIVATE.key', certfile='openssl/YOURPUBLIC.pem')
-    # print("Server is running !")
-    # http_server.serve_forever()
+    utils.delete_old_webhook()
+    url = settings.URL + "setWebhook"
+    answer = {
+        'url': "https://109.162.4.106:443/bot"
+    }
+    files = {'certificate': open("YOURPUBLIC.pem", 'r')}
+    r1 = requests.post(url, data=answer, files=files)
+    print("Webhook set !")
+
+    from gevent.pywsgi import WSGIServer
+
+    http_server = WSGIServer(('0.0.0.0', 443), application=app, keyfile='YOURPRIVATE.key', certfile='YOURPUBLIC.pem')
+    print("Server is running !")
+    http_server.serve_forever()

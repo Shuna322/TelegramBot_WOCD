@@ -93,8 +93,9 @@ class Registration:
                 sql = "INSERT INTO `users_status` (`id`, `chat_id`, `status`, `team_id`) VALUES (NULL, %s, %s, NULL);"
                 cursor.execute(sql, (chat_id, status.Status.keyEnter.value))
                 conn.commit()
+                button_markup_clear = "eydyZW1vdmVfa2V5Ym9hcmQnOlRydWV9"
                 message = "Розпочато реєстрацю, введіть персональний ключ"
-                send_msg(chat_id, message)
+                send_msg(chat_id, message, button_markup=button_markup_clear)
         except Exception as e:
             print("Got DB ex: " + e.__doc__)
             message = "Сталася помилка при роботі з базою данних"
@@ -143,10 +144,10 @@ class Registration:
                     cursor.execute(sql, user_status_id)
                     conn.commit()
 
-                    button_markup_clear = "eydyZW1vdmVfa2V5Ym9hcmQnOlRydWV9"
+                    main_menu_markup = "eydrZXlib2FyZCc6W1t7J3RleHQnOifQoNC10ZTRgdGC0YDQsNGG0ZbRjyDinI/vuI8nfSx7J3RleHQnOifQotC10YXQvdC+INC60LLQtdGB0YIg8J+Oryd9LHsndGV4dCc6J9Ce0YLRgNC40LzQsNGC0Lgg0LrRgNC+0YHQstC+0YDQtCDwn46yJ31dLFt7J3RleHQnOifQotCw0LHQu9C40YbRjyDRgNC10LnRgtC40L3Qs9GW0LIg8J+PhSd9LHsndGV4dCc6J9CU0L7QstGW0LTQutCwIOKdkyd9XSxbeyd0ZXh0Jzon0JLQuNC60LvRjtGH0LjRgtC4INC80LXQvdGOIPCfkb4nfV1dLCdyZXNpemVfa2V5Ym9hcmQnOlRydWUsJ29uZV90aW1lX2tleWJvYXJkJzpGYWxzZX0="
 
                     message = "Операцію відмінео !"
-                    send_msg(chat_id=chat_id, text=message, button_markup=button_markup_clear)
+                    send_msg(chat_id=chat_id, text=message, button_markup=main_menu_markup)
                 else:
                     message = "Немає чого відміняти"
                     send_msg(chat_id=chat_id, text=message)

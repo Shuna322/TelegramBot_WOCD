@@ -1,6 +1,6 @@
-token = "819066941:AAHhUC2DlErMP_NLErJ5mfJTWNFgDiy97Sc"
+token = "819066941:AAGuh7wFi_Ek_RjZMzBGGC61ry1ZLCkxY_0"
 
-URL = 'https://api.telegram.org/bot819066941:AAHhUC2DlErMP_NLErJ5mfJTWNFgDiy97Sc/'
+URL = 'https://api.telegram.org/bot' + token + '/'
 
 ngrok_token = "2YKzZQs5HbksqP1AkRZaN_3TwdEn6CwZLzED16HeqMs"
 

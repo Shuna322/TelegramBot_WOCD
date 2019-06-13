@@ -268,8 +268,7 @@ class Registration:
                     message = "Введіть прізвище та ім'я капітана команди:"
                     send_msg(chat_id=chat_id, text=message)
                 else:
-                    message = "Не знайдено каманду закріплену за вами.\n" \
-                              "Як ви взагалі сюди попали ? 🧐"
+                    message = "Не знайдено команду закріплену за вами."
                     send_msg(chat_id=chat_id, text=message)
 
         except Exception as e:
@@ -462,12 +461,8 @@ class Registration:
                             result = cursor.fetchone()
                             team_names_array.append(result['name'])
 
-                        message = "Будь ласка підтвердіть правильність введених даних:\n" \
-                                  "Група: '" + command_class + "'\n" \
-                                                               "Назва команди: '" + command_name + "'\n" \
-                                                                                                   "Прізвище Ім'я капітана: '" + captain_name + "'\n" \
-                                                                                                                                                "Номер телефону капітана: '" + captain_phone + "'\n" \
-                                                                                                                                                                                               "Данні членів команди:\n"
+                        message = "Будь ласка підтвердіть правильність введених даних:\nГрупа: '" + command_class + "'\nНазва команди: '" + command_name + "'\nПрізвище Ім'я капітана: '"\
+                                  + captain_name + "'\nНомер телефону капітана: '" + captain_phone + "'\nДанні членів команди:\n"
                         i = 1
                         for name in team_names_array:
                             message = message + str(i) + ". '" + name + "'\n"
@@ -483,18 +478,6 @@ class Registration:
 
                     message = "Успішно встановлено данні члена команди.\nВведіть наступне прізвище ім'я:"
                     send_msg(chat_id=chat_id, text=message)
-
-                # button_markup_clear = "eydyZW1vdmVfa2V5Ym9hcmQnOlRydWV9"
-                #
-                # message = "Успішно встановлено данні капітана."
-                # send_msg(chat_id=chat_id, text=message, button_markup=button_markup_clear)
-                #
-                # sql = "UPDATE `users_status` SET `status` = %s WHERE `users_status`.`chat_id` = %s;"
-                # cursor.execute(sql, (status.Status.teammateName.value, chat_id))
-                # conn.commit()
-                #
-                # message = "Введіть прізвище та ім'я члена команди:"
-                # send_msg(chat_id=chat_id, text=message, button_markup=button_markup_clear)
 
         except Exception as e:
             print("Got database error at registration_teammateName function\nException: " + e.__doc__)

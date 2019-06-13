@@ -34,7 +34,7 @@ def parse_external_settings():
             result = cursor.fetchall()
             global num_of_members
             for row in result:
-                if row['attribute'] == "num_of_members": #TODO переробити як відтягуються данні
+                if row['attribute'] == "num_of_members":
                     num_of_members = row['value']
 
     except Exception as e:

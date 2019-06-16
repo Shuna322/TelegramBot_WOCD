@@ -6,12 +6,13 @@ import settings
 import utils
 import status
 
+
 app = Flask(__name__)
-app.debug = True
+app.debug = False
 
 
 @app.route('/bot', methods=['POST', 'GET'])
-def msg_handler():
+def admin_msg_handler():
     if request.method == 'POST':
         r = request.get_json()
         print("Received:")
@@ -62,15 +63,16 @@ def msg_handler():
                 for row in result:
                     status.stagesMap[row['status']](r)
             else:
-                try:
-                    msg_text = r['message']['text']
-                except Exception as e:
-                    print("Couldn't find text in msg, probably msg without text was send \nException: " + e.__doc__)
-                    message = "Ви відправили повідомлення без тексту.\n" + \
-                              "Скористайтеся командою /menu для отримння меню з доступними функціями."
-                    utils.send_msg(chat_id, message)
                 if msg_text == "Реєстрація ✏️":
                     utils.Registration.registration_start(chat_id)
+                elif msg_text == "Техно квест 🎯":
+                    utils.Quest.quest_start(chat_id)
+                elif msg_text == "Таблиця рейтингів 🏅":
+                    utils.show_rates(chat_id)
+                elif msg_text == "Довідка ❓":
+                    utils.show_help(chat_id)
+                elif msg_text == "Отримати кросворд 🎲":
+                    utils.get_crossword(chat_id)
                 else:
                     conn = pymysql.connect(host=settings.database_host,
                                            user=settings.database_user,
@@ -102,44 +104,72 @@ def msg_handler():
     else:
         return 'Bot welcomes you !'
 
+@app.route('/admin', methods=['GET'])
+def msg_handler():
+    if request.method == 'GET':
+        action = request.args.get('action')
+        token = request.args.get('token')
+        if action == "quest_start":
+            from threading import Thread
+
+            quest_init = Thread(utils.Quest.quest_init())
+            quest_init.start()
+            return "{status: 'OK'}"
 
 # https://api.telegram.org/bot819066941:AAHhUC2DlErMP_NLErJ5mfJTWNFgDiy97Sc/setWebhook?url=https://c0eda49f.ngrok.io/bot
 # https://c0eda49f.ngrok.io/bot
 
 
 if __name__ == '__main__':
-    settings.parse_external_settings()
-    # utils.delete_old_webhook()
-    # from threading import Thread
-    #
-    # run_ngrook = Thread(utils.setup_and_run_ngrok())
-    # run_ngrook.start()
-    #
-    # utils.set_webhook_info(utils.get_ngrok_url())
-    #
-    # from gevent.pywsgi import WSGIServer
-    # http_server = WSGIServer(('localhost', 5000), application=app)
-    # print("Server is running !")
-    # http_server.serve_forever()
+    if utils.test_internet_conn():
+        settings.parse_external_settings()
+        # utils.delete_old_webhook()
+        # from threading import Thread
+        #
+        # run_ngrook = Thread(utils.setup_and_run_ngrok())
+        # run_ngrook.start()
+        #
+        # utils.set_webhook_info(utils.get_ngrok_url())
+        #
+        # from gevent.pywsgi import WSGIServer
+        # http_server = WSGIServer(('localhost', 5000), application=app)
+        # print("Server is running !")
+        # http_server.serve_forever()
 
-    ##############################
+        ##############################
 
-    ################
-    # Команда для створення сертифікату:
-    # bin\openssl req -newkey rsa:2048 -sha256 -nodes -keyout YOURPRIVATE.key -x509 -days 365 -out YOURPUBLIC.pem -subj "/C=US/ST=New York/L=Brooklyn/O=Example Brooklyn Company/CN=109.162.4.106"
-    ################
+        ################
+        # Команда для створення сертифікату:
+        # bin\openssl req -newkey rsa:2048 -sha256 -nodes -keyout YOURPRIVATE.key -x509 -days 365 -out YOURPUBLIC.pem -subj "/C=US/ST=New York/L=Brooklyn/O=Example Brooklyn Company/CN=109.162.4.106"
+        ################
 
-    utils.delete_old_webhook()
-    url = settings.URL + "setWebhook"
-    answer = {
-        'url': "https://109.162.4.106:443/bot"
-    }
-    files = {'certificate': open("YOURPUBLIC.pem", 'r')}
-    r1 = requests.post(url, data=answer, files=files)
-    print("Webhook set !")
+        utils.delete_old_webhook()
+        url = settings.URL + "setWebhook"
+        answer = {
+            'url': "https://109.162.4.106:443/bot"
+        }
+        files = {'certificate': open("YOURPUBLIC.pem", 'r')}
+        r1 = requests.post(url, data=answer, files=files)
+        print("Webhook set !")
 
-    from gevent.pywsgi import WSGIServer
+        from gevent.pywsgi import WSGIServer
 
-    http_server = WSGIServer(('0.0.0.0', 443), application=app, keyfile='YOURPRIVATE.key', certfile='YOURPUBLIC.pem')
-    print("Server is running !")
-    http_server.serve_forever()
+
+        http_server = WSGIServer(('0.0.0.0', 443), application=app, keyfile='YOURPRIVATE.key',
+                                 certfile='YOURPUBLIC.pem')
+        try:
+            print("Server is running !")
+            # http_server.serve_forever()
+
+            http_server.serve_forever()
+        except KeyboardInterrupt:
+            print("Shutting down...")
+            from sys import exit
+
+            exit(0)
+        except OSError as e:
+            print("Can't connect to Internet !")
+        except Exception as e:
+            print("Got an error:" + e.__doc__)
+
+

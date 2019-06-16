@@ -16,6 +16,30 @@ database_DB = "wocd_dev_db"
 num_of_members = 0
 #################################
 
+main_menu_keyboard = {
+  'keyboard': [
+    [{
+      'text': 'Реєстрація ✏️'
+    }, {
+      'text': 'Техно квест 🎯'
+    }, {
+      'text': 'Отримати кросворд 🎲'
+    }],
+    [{
+      'text': 'Таблиця рейтингів 🏅'
+    }, {
+      'text': 'Довідка ❓'
+    }],
+    [{
+      'text': 'Виключити меню 👾'
+    }]
+  ],
+  'resize_keyboard': True,
+  'one_time_keyboard': False
+}
+
+remove_keyboard = {'remove_keyboard': True}
+
 
 def parse_external_settings():
     import pymysql.cursors
